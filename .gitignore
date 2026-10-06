@@ -1,0 +1,7 @@
+.ai-dlc/worktrees/
+
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+dist.zip

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe: unit-03-chrome-extension</title>
+<style>
+  /* === DESIGN BLUEPRINT TOKENS (Editorial archetype) === */
+  :root {
+    --color-primary: #1a1a1a;
+    --color-background: #f8f7f4;
+    --color-accent: #c5a572;
+    --color-text: #1a1a1a;
+    --color-muted: #8a8580;
+    --font-heading: Georgia, 'Times New Roman', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-base: 15px;
+    --line-height: 1.5;
+    --border-radius: 10px;
+    --border-width: 2px;
+    --border-color: #d4cfc7;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --spacing-unit: 8px;
+    --spacing-section: 48px;
+  }
+
+  /* === BASE === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--color-background);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    padding: var(--spacing-section) 20px;
+  }
+  h1 { text-align: center; font-family: var(--font-heading); font-size: 18px; color: var(--color-muted); margin-bottom: 8px; }
+  .subtitle { text-align: center; font-size: 13px; color: var(--color-muted); margin-bottom: var(--spacing-section); }
+
+  /* === LAYOUT === */
+  .flow { display: flex; gap: calc(var(--spacing-unit) * 3); justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: calc(var(--spacing-section) / 1.5); }
+  .flow:last-child { margin-bottom: 0; }
+  .section-label { font-family: var(--font-heading); font-size: 14px; color: var(--color-text); text-align: center; margin: 0 0 16px; letter-spacing: 0.2px; }
+
+  /* === SCREEN CARDS === */
+  .screen {
+    width: 300px;
+    background: var(--color-background);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .screen-header {
+    background: color-mix(in srgb, var(--color-background) 85%, var(--color-text));
+    padding: var(--spacing-unit) calc(var(--spacing-unit) + 4px);
+    font-family: var(--font-heading);
+    font-size: 11px; font-weight: 600;
+    color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: var(--border-width) solid var(--border-color);
+  }
+  .screen-body { padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) + 8px); }
+  .screen-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; margin-bottom: calc(var(--spacing-unit) * 2); text-align: center; }
+
+  /* === STACKED PANEL SECTIONS === */
+  .panel-section { margin-bottom: calc(var(--spacing-unit) * 2); }
+  .panel-label {
+    font-family: var(--font-heading); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--color-muted); margin-bottom: 6px;
+  }
+  .panel-box {
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: calc(var(--spacing-unit) + 2px);
+    font-size: 12px; min-height: 80px;
+  }
+  .panel-box.input-box { color: var(--color-text); }
+  .panel-box.input-box.empty { color: var(--color-muted); font-style: italic; }
+  .panel-box.preview-box { background: color-mix(in srgb, var(--color-background) 92%, var(--color-text)); }
+  .panel-box.preview-box.empty { color: var(--color-muted); font-style: italic; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .mrkdwn-line { margin-bottom: 4px; }
+  .mrkdwn-line:last-child { margin-bottom: 0; }
+  .mrkdwn-bold { font-weight: 700; }
+  .mrkdwn-italic { font-style: italic; }
+  .mrkdwn-bullet { display: block; padding-left: 12px; text-indent: -12px; }
+
+  /* === BUTTONS (understated / text-based, stacked) === */
+  .btn-col { display: flex; flex-direction: column; gap: 8px; margin-top: calc(var(--spacing-unit) * 2); }
+  .btn {
+    padding: calc(var(--spacing-unit) + 2px) calc(var(--spacing-unit) * 2);
+    border-radius: var(--border-radius);
+    border: var(--border-width) solid var(--border-color);
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; cursor: default; text-align: center;
+    color: var(--color-text);
+  }
+  .btn-primary { border-color: var(--color-text); }
+  .btn-secondary { color: var(--color-muted); }
+
+  /* === FOOTER NOTE === */
+  .footer-note {
+    text-align: center; font-size: 11px; color: var(--color-muted);
+    margin-top: calc(var(--spacing-unit) * 2); padding-top: var(--spacing-unit);
+    border-top: 1px solid var(--border-color);
+  }
+
+  /* === FLOW NOTES (yellow callout) === */
+  .note {
+    background: #fffde7; border: 1px solid #fff176; border-radius: var(--border-radius);
+    padding: 10px 12px; font-size: 12px; color: var(--color-muted); margin-top: calc(var(--spacing-unit) + 4px); line-height: 1.4;
+  }
+  .note strong { color: var(--color-text); }
+</style>
+</head>
+<body>
+
+<h1>MDforSlack — Markdown to Slack Converter</h1>
+<p class="subtitle">Wireframe &mdash; Unit: unit-03-chrome-extension (Chrome Side Panel) &mdash; AI-DLC Elaboration Artifact</p>
+
+<p class="section-label">Side panel — filled state</p>
+<div class="flow">
+  <div class="screen">
+    <div class="screen-header">apps/extension — sidepanel.html</div>
+    <div class="screen-body">
+      <div class="screen-title">MDforSlack</div>
+
+      <div class="panel-section">
+        <div class="panel-label">Markdown Input</div>
+        <div class="panel-box input-box">
+          # Release Notes<br><br>
+          - **Fixed** login bug<br>
+          - _Improved_ load time
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-label">Slack Preview</div>
+        <div class="panel-box preview-box">
+          <div class="mrkdwn-line"><span class="mrkdwn-bold">Release Notes</span></div>
+          <span class="mrkdwn-bullet">• <span class="mrkdwn-bold">Fixed</span> login bug</span>
+          <span class="mrkdwn-bullet">• <span class="mrkdwn-italic">Improved</span> load time</span>
+        </div>
+      </div>
+
+      <div class="btn-col">
+        <div class="btn btn-primary">Copy for Slack</div>
+        <div class="btn btn-secondary">Copy mrkdwn</div>
+      </div>
+
+      <div class="footer-note">Runs locally · no data sent</div>
+
+      <div class="note">
+        <strong>Toolbar icon:</strong> clicking the extension's action icon opens/closes this side
+        panel directly (<code>openPanelOnActionClick: true</code>) — no separate popup step, and the
+        panel stays docked open across tab/window switches (unlike a popup, which closes on blur).<br>
+        <strong>Live update / copy behavior:</strong> identical to the web app — debounced re-render on
+        keystroke, "Copy for Slack" writes text/html + text/plain with a brief "Copied!" confirmation
+        (falls back to plain-text-only with a visible notice if unsupported), "Copy mrkdwn" writes the
+        plain mrkdwn text only.
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="section-label">Side panel — empty input state</p>
+<div class="flow">
+  <div class="screen">
+    <div class="screen-header">apps/extension — sidepanel.html</div>
+    <div class="screen-body">
+      <div class="screen-title">MDforSlack</div>
+
+      <div class="panel-section">
+        <div class="panel-label">Markdown Input</div>
+        <div class="panel-box input-box empty">Type or paste Markdown here…</div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-label">Slack Preview</div>
+        <div class="panel-box preview-box empty">Your Slack-ready preview will appear here</div>
+      </div>
+
+      <div class="btn-col">
+        <div class="btn btn-primary">Copy for Slack</div>
+        <div class="btn btn-secondary">Copy mrkdwn</div>
+      </div>
+
+      <div class="footer-note">Runs locally · no data sent</div>
+
+      <div class="note">
+        <strong>Layout note:</strong> single stacked column throughout (no side-by-side panes) — the
+        docked side panel is narrow, so input above / preview below fits better than the web app's
+        two-column layout.
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

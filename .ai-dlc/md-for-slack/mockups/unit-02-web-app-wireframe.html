@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe: unit-02-web-app</title>
+<style>
+  /* === DESIGN BLUEPRINT TOKENS (Editorial archetype) === */
+  :root {
+    --color-primary: #1a1a1a;
+    --color-background: #f8f7f4;
+    --color-accent: #c5a572;
+    --color-text: #1a1a1a;
+    --color-muted: #8a8580;
+    --font-heading: Georgia, 'Times New Roman', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-base: 15px;
+    --line-height: 1.5;
+    --border-radius: 10px;
+    --border-width: 2px;
+    --border-color: #d4cfc7;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --spacing-unit: 8px;
+    --spacing-section: 48px;
+  }
+
+  /* === BASE === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--color-background);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    padding: var(--spacing-section) 20px;
+  }
+  h1 { text-align: center; font-family: var(--font-heading); font-size: 18px; color: var(--color-muted); margin-bottom: 8px; }
+  .subtitle { text-align: center; font-size: 13px; color: var(--color-muted); margin-bottom: var(--spacing-section); }
+
+  /* === LAYOUT === */
+  .flow { display: flex; gap: calc(var(--spacing-unit) * 3); justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: calc(var(--spacing-section) / 1.5); }
+  .flow:last-child { margin-bottom: 0; }
+  .section-label { font-family: var(--font-heading); font-size: 14px; color: var(--color-text); text-align: center; margin: 0 0 16px; letter-spacing: 0.2px; }
+
+  /* === SCREEN CARDS === */
+  .screen {
+    width: 300px;
+    background: var(--color-background);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .screen.screen-wide { width: 620px; }
+  .screen-header {
+    background: color-mix(in srgb, var(--color-background) 85%, var(--color-text));
+    padding: var(--spacing-unit) calc(var(--spacing-unit) + 4px);
+    font-family: var(--font-heading);
+    font-size: 11px; font-weight: 600;
+    color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: var(--border-width) solid var(--border-color);
+  }
+  .screen-body { padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) + 8px); }
+  .screen-title { font-family: var(--font-heading); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .screen-desc { font-size: 13px; color: var(--color-muted); margin-bottom: calc(var(--spacing-unit) * 2); line-height: var(--line-height); }
+
+  /* === TWO-PANE / STACKED CONVERTER LAYOUT === */
+  .panes { display: flex; gap: calc(var(--spacing-unit) * 2); align-items: stretch; }
+  .panes.stacked { flex-direction: column; }
+  .pane { flex: 1; min-width: 0; }
+  .pane-label {
+    font-family: var(--font-heading); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--color-muted); margin-bottom: 6px;
+  }
+  .pane-box {
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: calc(var(--spacing-unit) + 2px);
+    font-size: 13px; min-height: 130px;
+  }
+  .pane-box.input-box { color: var(--color-text); }
+  .pane-box.input-box.empty { color: var(--color-muted); font-style: italic; }
+  .pane-box.preview-box { background: color-mix(in srgb, var(--color-background) 92%, var(--color-text)); }
+  .pane-box.preview-box.empty { color: var(--color-muted); font-style: italic; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .mrkdwn-line { margin-bottom: 6px; }
+  .mrkdwn-line:last-child { margin-bottom: 0; }
+  .mrkdwn-bold { font-weight: 700; }
+  .mrkdwn-italic { font-style: italic; }
+  .mrkdwn-link { color: var(--color-accent); text-decoration: underline; }
+  .mrkdwn-bullet { display: block; padding-left: 14px; text-indent: -14px; }
+
+  /* === BUTTONS (understated / text-based, per Editorial component guidelines) === */
+  .btn-row { display: flex; gap: 10px; margin-top: calc(var(--spacing-unit) * 2); flex-wrap: wrap; }
+  .btn {
+    padding: calc(var(--spacing-unit) + 2px) calc(var(--spacing-unit) * 2);
+    border-radius: var(--border-radius);
+    border: var(--border-width) solid var(--border-color);
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 14px; font-weight: 600; cursor: default; text-align: center;
+    color: var(--color-text);
+  }
+  .btn-primary { border-color: var(--color-text); }
+  .btn-secondary { color: var(--color-muted); }
+
+  /* === FOOTER ROW (privacy note) === */
+  .footer-row {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    gap: 8px; margin-top: calc(var(--spacing-unit) * 2);
+  }
+  .privacy-note { font-size: 12px; color: var(--color-muted); }
+
+  /* === FLOW NOTES (yellow callout) === */
+  .note {
+    background: #fffde7; border: 1px solid #fff176; border-radius: var(--border-radius);
+    padding: 10px 12px; font-size: 12px; color: var(--color-muted); margin-top: calc(var(--spacing-unit) + 4px); line-height: 1.4;
+  }
+  .note strong { color: var(--color-text); }
+</style>
+</head>
+<body>
+
+<h1>MDforSlack — Markdown to Slack Converter</h1>
+<p class="subtitle">Wireframe &mdash; Unit: unit-02-web-app (Web App) &mdash; AI-DLC Elaboration Artifact</p>
+
+<p class="section-label">Desktop &ge; 768px — filled state</p>
+<div class="flow">
+  <div class="screen screen-wide">
+    <div class="screen-header">apps/web — main view</div>
+    <div class="screen-body">
+      <div class="screen-title">MDforSlack</div>
+      <div class="screen-desc">Paste-ready Slack formatting, 100% in your browser.</div>
+
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-label">Markdown Input</div>
+          <div class="pane-box input-box">
+            # Release Notes<br><br>
+            - **Fixed** login bug<br>
+            - _Improved_ load time<br><br>
+            See [changelog](https://example.com/log)
+          </div>
+        </div>
+        <div class="pane">
+          <div class="pane-label">Slack Preview</div>
+          <div class="pane-box preview-box">
+            <div class="mrkdwn-line"><span class="mrkdwn-bold">Release Notes</span></div>
+            <span class="mrkdwn-bullet">• <span class="mrkdwn-bold">Fixed</span> login bug</span>
+            <span class="mrkdwn-bullet">• <span class="mrkdwn-italic">Improved</span> load time</span>
+            <div class="mrkdwn-line" style="margin-top:6px;">See <span class="mrkdwn-link">changelog</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <div class="btn-row">
+          <div class="btn btn-primary">Copy for Slack</div>
+          <div class="btn btn-secondary">Copy mrkdwn</div>
+        </div>
+        <div class="privacy-note">Free · No sign-up · Runs locally in your browser</div>
+      </div>
+
+      <div class="note">
+        <strong>Live update:</strong> preview re-renders on every keystroke (~150ms debounce), driven
+        by <code>SlackHtmlFragment.html</code>, not the raw mrkdwn string.<br>
+        <strong>Copy for Slack:</strong> writes text/html + text/plain in one clipboard call; shows a
+        brief "Copied!" confirmation. If multi-MIME write is unsupported, falls back to plain-text-only
+        copy with a visible notice.<br>
+        <strong>Copy mrkdwn:</strong> writes only the plain mrkdwn text; same brief confirmation.
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="section-label">Desktop &ge; 768px — empty input state</p>
+<div class="flow">
+  <div class="screen screen-wide">
+    <div class="screen-header">apps/web — main view</div>
+    <div class="screen-body">
+      <div class="screen-title">MDforSlack</div>
+      <div class="screen-desc">Paste-ready Slack formatting, 100% in your browser.</div>
+
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-label">Markdown Input</div>
+          <div class="pane-box input-box empty">Type or paste Markdown here…</div>
+        </div>
+        <div class="pane">
+          <div class="pane-label">Slack Preview</div>
+          <div class="pane-box preview-box empty">Your Slack-ready preview will appear here</div>
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <div class="btn-row">
+          <div class="btn btn-primary">Copy for Slack</div>
+          <div class="btn btn-secondary">Copy mrkdwn</div>
+        </div>
+        <div class="privacy-note">Free · No sign-up · Runs locally in your browser</div>
+      </div>
+
+      <div class="note">
+        <strong>Empty state:</strong> preview pane shows a placeholder message rather than an empty
+        box until the user types or pastes something.
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="section-label">Narrow viewport &lt; 768px — stacked layout</p>
+<div class="flow">
+  <div class="screen">
+    <div class="screen-header">apps/web — main view (mobile)</div>
+    <div class="screen-body">
+      <div class="screen-title" style="font-size:16px;">MDforSlack</div>
+      <div class="screen-desc" style="font-size:11px;">Paste-ready Slack formatting, 100% in your browser.</div>
+
+      <div class="panes stacked">
+        <div class="pane">
+          <div class="pane-label">Markdown Input</div>
+          <div class="pane-box input-box" style="min-height:80px;">
+            # Release Notes<br>- **Fixed** login bug
+          </div>
+        </div>
+        <div class="pane">
+          <div class="pane-label">Slack Preview</div>
+          <div class="pane-box preview-box" style="min-height:80px;">
+            <div class="mrkdwn-line"><span class="mrkdwn-bold">Release Notes</span></div>
+            <span class="mrkdwn-bullet">• <span class="mrkdwn-bold">Fixed</span> login bug</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="flex-direction:column;">
+        <div class="btn btn-primary">Copy for Slack</div>
+        <div class="btn btn-secondary">Copy mrkdwn</div>
+      </div>
+      <div class="privacy-note" style="margin-top:8px; text-align:center;">Free · No sign-up · Runs locally in your browser</div>
+
+      <div class="note">
+        <strong>Responsive rule:</strong> below 768px viewport width, the two panes stack vertically
+        (input above preview) instead of appearing side by side. No other layout logic changes.
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

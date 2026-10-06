@@ -1,0 +1,28 @@
+{
+  "name": "@md2chat/browser-utils",
+  "version": "0.1.0",
+  "description": "Shared browser clipboard helpers (rich HTML+mrkdwn copy with plain-text fallback) for the MD2Chat web app and Chrome extension.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

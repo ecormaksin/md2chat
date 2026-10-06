@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MD2Chat — Markdown to Slack converter</title>
+    <meta
+      name="description"
+      content="Type Markdown, get Slack-ready formatting instantly — no server, no sign-up, no data leaving your browser."
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>MD2Chat</h1>
+      <p class="tagline">
+        Type Markdown, get Slack-ready formatting — instantly, entirely in your browser.
+      </p>
+    </header>
+
+    <main>
+      <div class="panes">
+        <section class="pane" aria-labelledby="input-pane-label">
+          <h2 class="pane-label" id="input-pane-label">Markdown Input</h2>
+          <textarea
+            id="markdown-input"
+            class="pane-box input-box"
+            aria-labelledby="input-pane-label"
+            placeholder="Type or paste Markdown here…"
+            autofocus
+          ></textarea>
+        </section>
+
+        <section class="pane" aria-labelledby="preview-pane-label">
+          <h2 class="pane-label" id="preview-pane-label">Slack Preview</h2>
+          <div
+            id="slack-preview"
+            class="pane-box preview-box"
+            role="region"
+            aria-labelledby="preview-pane-label"
+            aria-live="polite"
+          ></div>
+        </section>
+      </div>
+
+      <div class="footer-row">
+        <div class="btn-row">
+          <button id="copy-for-slack" type="button" class="btn btn-primary" disabled>
+            Copy for Slack
+          </button>
+          <button id="copy-mrkdwn" type="button" class="btn btn-secondary" disabled>
+            Copy mrkdwn
+          </button>
+        </div>
+        <p class="privacy-note">Free · No sign-up · Runs locally in your browser</p>
+      </div>
+
+      <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <a href="THIRD_PARTY_LICENSES.txt" target="_blank" rel="noopener">Third-party licenses</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

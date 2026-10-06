@@ -1,0 +1,7 @@
+git:
+  change_strategy: trunk
+  default_branch: main
+
+visual_review: false
+
+default_announcements: [changelog]
