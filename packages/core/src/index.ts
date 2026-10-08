@@ -22,6 +22,7 @@ import type {
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import stringWidth from "string-width";
+import { nestShallowListsUnderOrderedItems } from "./list-indentation.js";
 
 /**
  * Result of converting a Markdown document into both Slack output formats.
@@ -40,10 +41,12 @@ export interface ConvertResult {
 const processor = remark().use(remarkGfm);
 
 /**
- * Parses raw Markdown into an mdast Root using remark + remark-gfm.
+ * Parses raw Markdown into an mdast Root using remark + remark-gfm, after
+ * re-indenting 2-space lists nested under ordered items (see
+ * list-indentation.ts).
  */
 export function parse(markdown: string): Root {
-  return processor.parse(markdown);
+  return processor.parse(nestShallowListsUnderOrderedItems(markdown));
 }
 
 /**
