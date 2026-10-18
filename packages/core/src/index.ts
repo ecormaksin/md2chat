@@ -381,22 +381,21 @@ function renderBlockquoteMrkdwn(node: Blockquote): string {
 }
 
 function renderListMrkdwn(list: List, depth: number): string {
-  const lines: string[] = [];
-
-  list.children.forEach((item: ListItem, index: number) => {
+  const items = list.children.map((item: ListItem, index: number) => {
     const marker = listItemMarkerMrkdwn(list, item, depth, index);
     const { textParts, nestedLists } = splitListItemChildren(item);
 
     const renderedText = textParts.map((child) => blockToMrkdwn(child, 0));
     const firstLine = `${marker} ${renderedText.join(" ")}`.trimEnd();
-    lines.push(firstLine);
-
-    for (const nested of nestedLists) {
-      lines.push(renderListMrkdwn(nested, depth + 1));
-    }
+    const nestedLines = nestedLists.map((nested) =>
+      renderListMrkdwn(nested, depth + 1)
+    );
+    return [firstLine, ...nestedLines].join("\n");
   });
 
-  return lines.join("\n");
+  // A loose list (items separated by blank lines) keeps a blank line between
+  // items, mirroring renderListHtml().
+  return items.join(list.spread ? "\n\n" : "\n");
 }
 
 function listItemMarkerMrkdwn(
@@ -482,16 +481,33 @@ function renderBlockquoteHtml(node: Blockquote): string {
 }
 
 function renderListHtml(list: List, depth: number): string {
+  const start = list.start ?? 1;
+  if (!list.spread) {
+    return wrapListItemsHtml(list, list.children, start, depth);
+  }
+  // A loose list (items separated by blank lines) has no in-list blank-line
+  // representation, so each item gets its own wrapper, separated by the same
+  // `<br>` that renderHtmlBlocks() puts after a block element.
+  return list.children
+    .map((item, index) => wrapListItemsHtml(list, [item], start + index, depth))
+    .join("<br>");
+}
+
+function wrapListItemsHtml(
+  list: List,
+  items: ListItem[],
+  start: number,
+  depth: number
+): string {
   const tag = list.ordered ? "ol" : "ul";
-  const items = list.children
+  const itemsHtml = items
     .map((item) => renderListItemHtml(list, item, depth))
     .join("");
   // Mirror the mrkdwn sibling (listItemMarkerMrkdwn's `list.start ?? 1`):
   // an ordered list with a custom start number must number from that value
   // in HTML output too, not silently restart at 1.
-  const start = list.start ?? 1;
   const startAttr = list.ordered && start !== 1 ? ` start="${start}"` : "";
-  return `<${tag}${startAttr}>${items}</${tag}>`;
+  return `<${tag}${startAttr}>${itemsHtml}</${tag}>`;
 }
 
 function renderListItemHtml(list: List, item: ListItem, depth: number): string {
