@@ -136,9 +136,9 @@ describe("block separators — adjacency of every block kind", () => {
 });
 
 describe("line breaks inside blockquotes and list items", () => {
-  it("separates a blockquote's list and following paragraph with a single <br>", () => {
+  it("separates a blockquote's text list and following paragraph with <br><br>", () => {
     expect(convert("> - x\n>\n> b").html).toBe(
-      "<blockquote><ul><li>x</li></ul><br>b</blockquote>"
+      "<blockquote>• x<br><br>b</blockquote>"
     );
   });
 

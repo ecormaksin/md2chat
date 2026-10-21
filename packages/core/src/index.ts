@@ -63,7 +63,7 @@ export function toMrkdwn(ast: Root): string {
  * Renders an mdast Root into a Slack-paste-compatible HTML fragment.
  */
 export function toSlackHtml(ast: Root): string {
-  return renderHtmlBlocks(ast.children, 0);
+  return renderHtmlBlocks(ast.children, 0, false);
 }
 
 /**
@@ -382,7 +382,7 @@ function renderBlockquoteMrkdwn(node: Blockquote): string {
 
 function renderListMrkdwn(list: List, depth: number): string {
   const items = list.children.map((item: ListItem, index: number) => {
-    const marker = listItemMarkerMrkdwn(list, item, depth, index);
+    const marker = listItemMarker(list, item, depth, index);
     const { textParts, nestedLists } = splitListItemChildren(item);
 
     const renderedText = textParts.map((child) => blockToMrkdwn(child, 0));
@@ -398,7 +398,11 @@ function renderListMrkdwn(list: List, depth: number): string {
   return items.join(list.spread ? "\n\n" : "\n");
 }
 
-function listItemMarkerMrkdwn(
+/**
+ * Text marker for a list item, shared by the mrkdwn renderer and the HTML
+ * renderer's in-blockquote text lists (see renderListTextHtml()).
+ */
+function listItemMarker(
   list: List,
   item: ListItem,
   depth: number,
@@ -417,7 +421,17 @@ function listItemMarkerMrkdwn(
 // Block content rendering — HTML
 // ---------------------------------------------------------------------------
 
-function blockToHtml(node: RootContent, listDepth: number): string {
+/**
+ * `inBlockquote` is true for blocks anywhere inside a blockquote: Slack's quote
+ * holds inline content only (Block Kit `rich_text_quote`), so a `<ul>`/`<ol>`
+ * pasted inside a `<blockquote>` loses its list markers. Lists there render
+ * as text lines with the same markers as mrkdwn instead.
+ */
+function blockToHtml(
+  node: RootContent,
+  listDepth: number,
+  inBlockquote: boolean
+): string {
   switch (node.type) {
     case "paragraph":
       return renderInlineHtml((node as Paragraph).children);
@@ -428,7 +442,9 @@ function blockToHtml(node: RootContent, listDepth: number): string {
     case "blockquote":
       return renderBlockquoteHtml(node as Blockquote);
     case "list":
-      return renderListHtml(node as List, listDepth);
+      return inBlockquote
+        ? renderListTextHtml(node as List, listDepth)
+        : renderListHtml(node as List, listDepth);
     case "table":
       return `<pre><code>${escapeHtml(renderTableText(node as Table))}</code></pre>`;
     case "code":
@@ -444,7 +460,8 @@ function blockToHtml(node: RootContent, listDepth: number): string {
 
 // Block kinds rendered as an HTML block element (ul/ol, blockquote, pre, hr),
 // which already starts a new line on its own. Every other block (paragraph,
-// heading, fallback text) renders as inline content.
+// heading, fallback text, and a list inside a blockquote) renders as inline
+// content.
 const HTML_BLOCK_ELEMENT_TYPES: ReadonlySet<RootContent["type"]> = new Set([
   "list",
   "blockquote",
@@ -461,14 +478,18 @@ const HTML_BLOCK_ELEMENT_TYPES: ReadonlySet<RootContent["type"]> = new Set([
  * block element `<br>` (blank line only, since the element already breaks
  * the line). Blocks that render to an empty string are dropped first.
  */
-function renderHtmlBlocks(nodes: RootContent[], listDepth: number): string {
+function renderHtmlBlocks(
+  nodes: RootContent[],
+  listDepth: number,
+  inBlockquote: boolean
+): string {
   let html = "";
   let previous: RootContent | undefined;
   for (const node of nodes) {
-    const rendered = blockToHtml(node, listDepth);
+    const rendered = blockToHtml(node, listDepth, inBlockquote);
     if (rendered.length === 0) continue;
     if (previous !== undefined) {
-      html += HTML_BLOCK_ELEMENT_TYPES.has(previous.type) ? "<br>" : "<br><br>";
+      html += isHtmlBlockElement(previous, inBlockquote) ? "<br>" : "<br><br>";
     }
     html += rendered;
     previous = node;
@@ -476,8 +497,31 @@ function renderHtmlBlocks(nodes: RootContent[], listDepth: number): string {
   return html;
 }
 
+function isHtmlBlockElement(node: RootContent, inBlockquote: boolean): boolean {
+  if (inBlockquote && node.type === "list") return false;
+  return HTML_BLOCK_ELEMENT_TYPES.has(node.type);
+}
+
 function renderBlockquoteHtml(node: Blockquote): string {
-  return `<blockquote>${renderHtmlBlocks(node.children, 0)}</blockquote>`;
+  return `<blockquote>${renderHtmlBlocks(node.children, 0, true)}</blockquote>`;
+}
+
+/**
+ * HTML counterpart to renderListMrkdwn(), for lists inside a blockquote (see
+ * blockToHtml()): one `<br>`-separated text line per item, prefixed with the
+ * same marker as mrkdwn.
+ */
+function renderListTextHtml(list: List, depth: number): string {
+  const items = list.children.map((item: ListItem, index: number) => {
+    const marker = listItemMarker(list, item, depth, index);
+    const { textParts, nestedLists } = splitListItemChildren(item);
+    const textHtml = renderHtmlBlocks(textParts, 0, true);
+    const nestedLines = nestedLists.map((nested) =>
+      renderListTextHtml(nested, depth + 1)
+    );
+    return [`${marker} ${textHtml}`.trimEnd(), ...nestedLines].join("<br>");
+  });
+  return items.join(list.spread ? "<br><br>" : "<br>");
 }
 
 function renderListHtml(list: List, depth: number): string {
@@ -503,7 +547,7 @@ function wrapListItemsHtml(
   const itemsHtml = items
     .map((item) => renderListItemHtml(list, item, depth))
     .join("");
-  // Mirror the mrkdwn sibling (listItemMarkerMrkdwn's `list.start ?? 1`):
+  // Mirror the mrkdwn sibling (listItemMarker's `list.start ?? 1`):
   // an ordered list with a custom start number must number from that value
   // in HTML output too, not silently restart at 1.
   const startAttr = list.ordered && start !== 1 ? ` start="${start}"` : "";
@@ -514,7 +558,7 @@ function renderListItemHtml(list: List, item: ListItem, depth: number): string {
   const { textParts, nestedLists } = splitListItemChildren(item);
   const prefix = taskGlyphPrefixHtml(item);
   // Nested lists get no separator before them: ul/ol already break the line.
-  const textHtml = renderHtmlBlocks(textParts, 0);
+  const textHtml = renderHtmlBlocks(textParts, 0, false);
   const nestedHtml = nestedLists
     .map((nested) => renderListHtml(nested, depth + 1))
     .join("");
