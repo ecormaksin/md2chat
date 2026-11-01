@@ -13,8 +13,8 @@ export type CopyStatus = { kind: "copied" } | { kind: "plain-fallback" };
 
 /**
  * "Copy for Slack": writes both text/html and text/plain in one clipboard
- * call via copySlackRichText, using @md2chat/core's SlackHtmlFragment.html
- * and SlackMrkdwnOutput.text. The html is run through the same DOMPurify
+ * call via copySlackRichText, using @md2chat/core's html and plainText, with
+ * mrkdwn as the fallback when a rich write is unavailable. The html is run through the same DOMPurify
  * allowlist used for the DOM preview (src/pipeline.ts SANITIZE_ALLOWED_TAGS)
  * before it reaches the clipboard — the clipboard write is the tool's actual
  * output artifact (what gets pasted into Slack/Gmail/Word/etc.), so it gets
@@ -23,13 +23,14 @@ export type CopyStatus = { kind: "copied" } | { kind: "plain-fallback" };
  */
 export async function handleCopyForSlack(
   html: string,
+  plainText: string,
   mrkdwn: string
 ): Promise<CopyStatus> {
   const sanitizedHtml = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [...SANITIZE_ALLOWED_TAGS],
     ALLOWED_ATTR: [...SANITIZE_ALLOWED_ATTR]
   });
-  const outcome = await copySlackRichText(sanitizedHtml, mrkdwn);
+  const outcome = await copySlackRichText(sanitizedHtml, plainText, mrkdwn);
   return outcome === "rich" ? { kind: "copied" } : { kind: "plain-fallback" };
 }
 

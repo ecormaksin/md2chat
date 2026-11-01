@@ -13,7 +13,8 @@ const copySlackRichText = vi.fn();
 const copyPlainText = vi.fn();
 
 vi.mock("@md2chat/browser-utils", () => ({
-  copySlackRichText: (html: string, mrkdwn: string) => copySlackRichText(html, mrkdwn),
+  copySlackRichText: (html: string, plainText: string, mrkdwn: string) =>
+    copySlackRichText(html, plainText, mrkdwn),
   copyPlainText: (text: string) => copyPlainText(text)
 }));
 
@@ -135,7 +136,7 @@ describe("apps/web UI wiring", () => {
     expect(copyMrkdwn.disabled).toBe(true);
   });
 
-  it('calls copySlackRichText with the core html + mrkdwn and shows "Copied!" on a rich resolve', async () => {
+  it('calls copySlackRichText with the core html + plainText + mrkdwn and shows "Copied!" on a rich resolve', async () => {
     copySlackRichText.mockResolvedValue("rich");
     await import("../src/main.ts");
 
@@ -150,7 +151,7 @@ describe("apps/web UI wiring", () => {
     copyForSlack.click();
     await wait(50);
 
-    expect(copySlackRichText).toHaveBeenCalledWith("<b>bold</b>", "*bold*");
+    expect(copySlackRichText).toHaveBeenCalledWith("<b>bold</b>", "bold", "*bold*");
     expect(status.textContent).toBe("Copied!");
   });
 

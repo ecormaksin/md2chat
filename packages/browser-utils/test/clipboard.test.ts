@@ -28,6 +28,7 @@ describe("copySlackRichText", () => {
 
     const outcome = await copySlackRichText(
       "<b>bold</b>",
+      "bold",
       "*bold*"
     );
 
@@ -43,7 +44,7 @@ describe("copySlackRichText", () => {
     vi.stubGlobal("ClipboardItem", FakeClipboardItem);
     vi.stubGlobal("navigator", { clipboard: { write, writeText } });
 
-    const outcome = await copySlackRichText("<b>bold</b>", "*bold*");
+    const outcome = await copySlackRichText("<b>bold</b>", "bold", "*bold*");
 
     expect(outcome).toBe("plain-fallback");
     expect(writeText).toHaveBeenCalledTimes(1);
@@ -56,7 +57,7 @@ describe("copySlackRichText", () => {
     // No global ClipboardItem stubbed at all -> simulates an unsupported browser.
     vi.stubGlobal("navigator", { clipboard: { writeText } });
 
-    const outcome = await copySlackRichText("<b>bold</b>", "*bold*");
+    const outcome = await copySlackRichText("<b>bold</b>", "bold", "*bold*");
 
     expect(outcome).toBe("plain-fallback");
     expect(writeText).toHaveBeenCalledWith("*bold*");

@@ -13,7 +13,7 @@ body instead of attaching it as a file or a snippet.
 
 ## Features
 
-- **Copy for Slack**: copies rich text (HTML) together with a plain `mrkdwn` fallback. Bold text,
+- **Copy for Slack**: copies rich text (HTML) together with markup-free plain text. Bold text,
   links, lists, and line breaks are preserved when you paste.
 - **Copy mrkdwn**: copies Slack's `mrkdwn` markup only, for bots, the API, or plain-text fields.
 - **Live preview** that updates as you type.

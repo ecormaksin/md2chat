@@ -11,13 +11,17 @@
 export type CopyOutcome = "rich" | "plain-fallback";
 
 /**
- * Attempts a rich copy (HTML + plain-text mrkdwn) via
+ * Attempts a rich copy (HTML + markup-free plain text) via
  * navigator.clipboard.write([new ClipboardItem(...)]).
  * Falls back to navigator.clipboard.writeText(mrkdwn) on any failure
  * (unsupported ClipboardItem, insecure context, etc.).
+ *
+ * `plainText` must carry no Slack markup: Slack's composer reads `text/plain`
+ * instead of `text/html` when the former contains markup such as `*bold*`.
  */
 export async function copySlackRichText(
   html: string,
+  plainText: string,
   mrkdwn: string
 ): Promise<CopyOutcome> {
   try {
@@ -26,7 +30,7 @@ export async function copySlackRichText(
     }
     const item = new ClipboardItem({
       "text/html": new Blob([html], { type: "text/html" }),
-      "text/plain": new Blob([mrkdwn], { type: "text/plain" }),
+      "text/plain": new Blob([plainText], { type: "text/plain" }),
     });
     await navigator.clipboard.write([item]);
     return "rich";

@@ -34,6 +34,12 @@ import { nestShallowListsUnderOrderedItems } from "./list-indentation.js";
 export interface ConvertResult {
   /** SlackMrkdwnOutput.text */
   mrkdwn: string;
+  /**
+   * Markup-free text for the `text/plain` half of a rich clipboard write.
+   * Slack's composer reads `text/plain` instead of `text/html` when the former
+   * contains markup such as `*bold*`, so mrkdwn cannot be used there.
+   */
+  plainText: string;
   /** SlackHtmlFragment.html — Slack-paste-compatible rich text */
   html: string;
 }
@@ -53,10 +59,14 @@ export function parse(markdown: string): Root {
  * Renders an mdast Root into Slack mrkdwn plain text.
  */
 export function toMrkdwn(ast: Root): string {
-  return ast.children
-    .map((child) => blockToMrkdwn(child, 0))
-    .filter((text) => text.length > 0)
-    .join("\n\n");
+  return renderTextBlocks(ast.children, MRKDWN_FORMAT);
+}
+
+/**
+ * Renders an mdast Root into markup-free text (see ConvertResult.plainText).
+ */
+export function toPlainText(ast: Root): string {
+  return renderTextBlocks(ast.children, PLAIN_TEXT_FORMAT);
 }
 
 /**
@@ -73,6 +83,7 @@ export function convert(markdown: string): ConvertResult {
   const ast = parse(markdown);
   return {
     mrkdwn: toMrkdwn(ast),
+    plainText: toPlainText(ast),
     html: toSlackHtml(ast),
   };
 }
@@ -252,42 +263,109 @@ function bulletForDepth(depth: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Inline (phrasing content) rendering — mrkdwn
+// Text output formats (mrkdwn + markup-free plain text)
 // ---------------------------------------------------------------------------
 
-function renderInlineMrkdwn(nodes: PhrasingContent[]): string {
-  return nodes.map((node) => inlineNodeToMrkdwn(node)).join("");
+/** What differs between the text renderers; the document walk is shared. */
+interface TextFormat {
+  text(value: string): string;
+  emphasis(inner: string): string;
+  strong(inner: string): string;
+  strike(inner: string): string;
+  inlineCode(value: string): string;
+  /** `label` has already been through `text()`. */
+  link(url: string, label: string): string;
+  heading(inner: string): string;
+  codeBlock(value: string): string;
+  blockquote(inner: string): string;
+  rawHtml(value: string): string;
 }
 
-function inlineNodeToMrkdwn(node: PhrasingContent): string {
+const MRKDWN_FORMAT: TextFormat = {
+  text: escapeMrkdwn,
+  emphasis: (inner) => `_${inner}_`,
+  strong: (inner) => `*${inner}*`,
+  strike: (inner) => `~${inner}~`,
+  inlineCode: (value) => `\`${value}\``,
+  link: renderMrkdwnLinkOrInner,
+  heading: (inner) => `*${inner}*`,
+  codeBlock: (value) => `\`\`\`\n${value}\n\`\`\``,
+  blockquote: (inner) =>
+    inner
+      .split("\n")
+      .map((line) => (line.length > 0 ? `> ${line}` : ">"))
+      .join("\n"),
+  // Raw HTML-shaped mdast nodes include Slack's own special-mention syntax
+  // (`<!channel>`, `<!here>`, `<@U...>`, `<#C...>`, `<!subteam^...>`), which
+  // is live Slack syntax once pasted, not inert HTML — escape it the same as
+  // ordinary text so it renders as literal characters instead of triggering a
+  // real mention/notification.
+  rawHtml: escapeMrkdwn,
+};
+
+const identity = (value: string): string => value;
+
+const PLAIN_TEXT_FORMAT: TextFormat = {
+  text: identity,
+  emphasis: identity,
+  strong: identity,
+  strike: identity,
+  inlineCode: identity,
+  link: renderPlainTextLink,
+  heading: identity,
+  codeBlock: identity,
+  blockquote: identity,
+  // Dropped, as in the HTML renderer.
+  rawHtml: () => "",
+};
+
+/**
+ * Keeps the link target readable as `label (url)`; unlike link markup, a bare
+ * URL does not make Slack's composer prefer `text/plain` over `text/html`.
+ */
+function renderPlainTextLink(url: string, label: string): string {
+  const normalizedUrl = normalizeUrlForSchemeCheck(url);
+  if (!isAllowedUrlScheme(normalizedUrl)) {
+    return label;
+  }
+  if (label.length === 0 || label === normalizedUrl) {
+    return normalizedUrl;
+  }
+  return `${label} (${normalizedUrl})`;
+}
+
+// ---------------------------------------------------------------------------
+// Inline (phrasing content) rendering — text formats
+// ---------------------------------------------------------------------------
+
+function renderInlineText(nodes: PhrasingContent[], format: TextFormat): string {
+  return nodes.map((node) => inlineNodeToText(node, format)).join("");
+}
+
+function inlineNodeToText(node: PhrasingContent, format: TextFormat): string {
   switch (node.type) {
     case "text":
-      return escapeMrkdwn((node as Text).value);
+      return format.text((node as Text).value);
     case "emphasis":
-      return `_${renderInlineMrkdwn((node as Emphasis).children)}_`;
+      return format.emphasis(renderInlineText((node as Emphasis).children, format));
     case "strong":
-      return `*${renderInlineMrkdwn((node as Strong).children)}*`;
+      return format.strong(renderInlineText((node as Strong).children, format));
     case "delete":
-      return `~${renderInlineMrkdwn((node as Delete).children)}~`;
+      return format.strike(renderInlineText((node as Delete).children, format));
     case "inlineCode":
-      return `\`${(node as InlineCode).value}\``;
+      return format.inlineCode((node as InlineCode).value);
     case "link": {
       const link = node as Link;
-      return renderMrkdwnLinkOrInner(link.url, renderInlineMrkdwn(link.children));
+      return format.link(link.url, renderInlineText(link.children, format));
     }
     case "image": {
       const image = node as Image;
-      return renderMrkdwnLinkOrInner(image.url, escapeMrkdwn(image.alt ?? ""));
+      return format.link(image.url, format.text(image.alt ?? ""));
     }
     case "break":
       return "\n";
     case "html":
-      // Raw HTML-shaped mdast nodes include Slack's own special-mention
-      // syntax (`<!channel>`, `<!here>`, `<@U...>`, `<#C...>`,
-      // `<!subteam^...>`), which is live Slack syntax once pasted, not inert
-      // HTML — escape it the same as ordinary text so it renders as literal
-      // characters instead of triggering a real mention/notification.
-      return escapeMrkdwn((node as Html).value);
+      return format.rawHtml((node as Html).value);
     default:
       return fallbackPlainText(node);
   }
@@ -340,55 +418,54 @@ function inlineNodeToHtml(node: PhrasingContent): string {
 }
 
 // ---------------------------------------------------------------------------
-// Block content rendering — mrkdwn
+// Block content rendering — text formats
 // ---------------------------------------------------------------------------
 
-function blockToMrkdwn(node: RootContent, listDepth: number): string {
+function renderTextBlocks(nodes: RootContent[], format: TextFormat): string {
+  return nodes
+    .map((child) => blockToText(child, 0, format))
+    .filter((text) => text.length > 0)
+    .join("\n\n");
+}
+
+function blockToText(
+  node: RootContent,
+  listDepth: number,
+  format: TextFormat
+): string {
   switch (node.type) {
     case "paragraph":
-      return renderInlineMrkdwn((node as Paragraph).children);
+      return renderInlineText((node as Paragraph).children, format);
     case "heading":
-      return `*${renderInlineMrkdwn((node as Heading).children)}*`;
+      return format.heading(renderInlineText((node as Heading).children, format));
     case "thematicBreak":
       return "─".repeat(40);
     case "blockquote":
-      return renderBlockquoteMrkdwn(node as Blockquote);
+      return format.blockquote(
+        renderTextBlocks((node as Blockquote).children, format)
+      );
     case "list":
-      return renderListMrkdwn(node as List, listDepth);
+      return renderListText(node as List, listDepth, format);
     case "table":
-      return `\`\`\`\n${renderTableText(node as Table)}\n\`\`\``;
+      return format.codeBlock(renderTableText(node as Table));
     case "code":
-      return `\`\`\`\n${(node as Code).value}\n\`\`\``;
+      return format.codeBlock((node as Code).value);
     case "html":
-      // See inlineNodeToMrkdwn()'s "html" case — a block-level raw-HTML-
-      // shaped node can equally contain a live Slack mention directive and
-      // must be neutralized the same way.
-      return escapeMrkdwn((node as Html).value);
+      return format.rawHtml((node as Html).value);
     default:
       return fallbackPlainText(node);
   }
 }
 
-function renderBlockquoteMrkdwn(node: Blockquote): string {
-  const inner = node.children
-    .map((child) => blockToMrkdwn(child, 0))
-    .filter((text) => text.length > 0)
-    .join("\n\n");
-  return inner
-    .split("\n")
-    .map((line) => (line.length > 0 ? `> ${line}` : ">"))
-    .join("\n");
-}
-
-function renderListMrkdwn(list: List, depth: number): string {
+function renderListText(list: List, depth: number, format: TextFormat): string {
   const items = list.children.map((item: ListItem, index: number) => {
     const marker = listItemMarker(list, item, depth, index);
     const { textParts, nestedLists } = splitListItemChildren(item);
 
-    const renderedText = textParts.map((child) => blockToMrkdwn(child, 0));
+    const renderedText = textParts.map((child) => blockToText(child, 0, format));
     const firstLine = `${marker} ${renderedText.join(" ")}`.trimEnd();
     const nestedLines = nestedLists.map((nested) =>
-      renderListMrkdwn(nested, depth + 1)
+      renderListText(nested, depth + 1, format)
     );
     return [firstLine, ...nestedLines].join("\n");
   });
@@ -399,7 +476,7 @@ function renderListMrkdwn(list: List, depth: number): string {
 }
 
 /**
- * Text marker for a list item, shared by the mrkdwn renderer and the HTML
+ * Text marker for a list item, shared by the text renderers and the HTML
  * renderer's in-blockquote text lists (see renderListTextHtml()).
  */
 function listItemMarker(
@@ -507,7 +584,7 @@ function renderBlockquoteHtml(node: Blockquote): string {
 }
 
 /**
- * HTML counterpart to renderListMrkdwn(), for lists inside a blockquote (see
+ * HTML counterpart to renderListText(), for lists inside a blockquote (see
  * blockToHtml()): one `<br>`-separated text line per item, prefixed with the
  * same marker as mrkdwn.
  */
@@ -599,7 +676,7 @@ function splitListItemChildren(item: ListItem): {
 // Table (row 13) column-alignment algorithm
 // ---------------------------------------------------------------------------
 
-// blockToMrkdwn and blockToHtml both render every table via this function
+// blockToText and blockToHtml both render every table via this function
 // (mrkdwn and HTML tables are the same monospace text, just wrapped
 // differently), so a Table node's layout is computed once and cached here,
 // keyed by the node's own identity. This is safe because convert() runs

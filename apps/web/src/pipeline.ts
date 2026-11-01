@@ -47,13 +47,15 @@ export const LARGE_INPUT_MESSAGE =
 export interface RenderedPreview {
   /** SlackMrkdwnOutput.text — used only for the "Copy mrkdwn" action. */
   mrkdwn: string;
+  /** Markup-free `text/plain` half of the "Copy for Slack" clipboard write. */
+  plainText: string;
   /** SlackHtmlFragment.html, as returned by @md2chat/core, pre-sanitization. */
   html: string;
   /** `html`, run through DOMPurify's allowlist — this is what gets inserted into the DOM. */
   sanitizedHtml: string;
   /**
    * True when `markdown.length` exceeded MAX_INPUT_LENGTH and conversion was
-   * skipped. When true, mrkdwn/html/sanitizedHtml are all "" — callers must
+   * skipped. When true, mrkdwn/plainText/html/sanitizedHtml are all "" — callers must
    * show LARGE_INPUT_MESSAGE instead of using them.
    */
   tooLarge: boolean;
@@ -68,12 +70,12 @@ export interface RenderedPreview {
  */
 export function renderPreview(markdown: string): RenderedPreview {
   if (markdown.length > MAX_INPUT_LENGTH) {
-    return { mrkdwn: "", html: "", sanitizedHtml: "", tooLarge: true };
+    return { mrkdwn: "", plainText: "", html: "", sanitizedHtml: "", tooLarge: true };
   }
-  const { mrkdwn, html } = convert(markdown);
+  const { mrkdwn, plainText, html } = convert(markdown);
   const sanitizedHtml = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [...SANITIZE_ALLOWED_TAGS],
     ALLOWED_ATTR: [...SANITIZE_ALLOWED_ATTR]
   });
-  return { mrkdwn, html, sanitizedHtml, tooLarge: false };
+  return { mrkdwn, plainText, html, sanitizedHtml, tooLarge: false };
 }

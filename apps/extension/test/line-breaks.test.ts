@@ -13,7 +13,8 @@ const copySlackRichText = vi.fn();
 const copyPlainText = vi.fn();
 
 vi.mock("@md2chat/browser-utils", () => ({
-  copySlackRichText: (html: string, mrkdwn: string) => copySlackRichText(html, mrkdwn),
+  copySlackRichText: (html: string, plainText: string, mrkdwn: string) =>
+    copySlackRichText(html, plainText, mrkdwn),
   copyPlainText: (text: string) => copyPlainText(text)
 }));
 
@@ -33,9 +34,9 @@ describe("line breaks through the sanitization pipeline", () => {
     copySlackRichText.mockResolvedValue("rich");
     const { renderPreview } = await import("../src/pipeline");
     const { handleCopyForSlack } = await import("../src/copy-actions");
-    const { html, mrkdwn } = renderPreview("a\nb\n\nc");
+    const { html, plainText, mrkdwn } = renderPreview("a\nb\n\nc");
 
-    await handleCopyForSlack(html, mrkdwn);
+    await handleCopyForSlack(html, plainText, mrkdwn);
 
     expect(copySlackRichText).toHaveBeenCalledTimes(1);
     const [copiedHtml] = copySlackRichText.mock.calls[0] ?? [];

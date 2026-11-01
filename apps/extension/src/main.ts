@@ -22,11 +22,13 @@ const EMPTY_PREVIEW_MESSAGE = "Your Slack-ready preview will appear here";
 interface ConversionState {
   /** SlackHtmlFragment.html — used for the "Copy for Slack" clipboard write. */
   html: string;
+  /** Markup-free `text/plain` half of the "Copy for Slack" clipboard write. */
+  plainText: string;
   /** SlackMrkdwnOutput.text — used for both copy actions. */
   mrkdwn: string;
 }
 
-let state: ConversionState = { html: "", mrkdwn: "" };
+let state: ConversionState = { html: "", plainText: "", mrkdwn: "" };
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -45,7 +47,7 @@ const copyMrkdwnBtn = requireElement<HTMLButtonElement>("copy-mrkdwn");
 const copyStatusEl = requireElement<HTMLElement>("copy-status");
 
 function setEmptyState(): void {
-  state = { html: "", mrkdwn: "" };
+  state = { html: "", plainText: "", mrkdwn: "" };
   previewEl.classList.add("empty");
   previewEl.textContent = EMPTY_PREVIEW_MESSAGE;
   copyForSlackBtn.disabled = true;
@@ -53,7 +55,7 @@ function setEmptyState(): void {
 }
 
 function setTooLargeState(): void {
-  state = { html: "", mrkdwn: "" };
+  state = { html: "", plainText: "", mrkdwn: "" };
   previewEl.classList.remove("empty");
   // Conversion was skipped entirely by the input-size guard (see
   // src/pipeline.ts MAX_INPUT_LENGTH) — there is no html/mrkdwn to copy.
@@ -63,12 +65,12 @@ function setTooLargeState(): void {
 }
 
 function setFilledState(markdown: string): void {
-  const { html, mrkdwn, sanitizedHtml, tooLarge } = renderPreview(markdown);
+  const { html, plainText, mrkdwn, sanitizedHtml, tooLarge } = renderPreview(markdown);
   if (tooLarge) {
     setTooLargeState();
     return;
   }
-  state = { html, mrkdwn };
+  state = { html, plainText, mrkdwn };
   previewEl.classList.remove("empty");
   // Defense-in-depth: only the DOMPurify-sanitized HTML is ever inserted
   // into the DOM (see src/pipeline.ts SANITIZE_ALLOWED_TAGS).
@@ -121,7 +123,7 @@ copyForSlackBtn.addEventListener("click", () => {
   // MV3 side panel document as in a normal page — it is still an ordinary
   // DOM document with its own gesture context (see
   // unit-03-chrome-extension.md's discovery notes on this point).
-  void handleCopyForSlack(state.html, state.mrkdwn).then((status) => {
+  void handleCopyForSlack(state.html, state.plainText, state.mrkdwn).then((status) => {
     showCopyStatus(
       status.kind === "copied"
         ? "Copied!"
