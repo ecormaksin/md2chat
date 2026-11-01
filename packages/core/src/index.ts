@@ -37,7 +37,8 @@ export interface ConvertResult {
   /**
    * Markup-free text for the `text/plain` half of a rich clipboard write.
    * Slack's composer reads `text/plain` instead of `text/html` when the former
-   * contains markup such as `*bold*`, so mrkdwn cannot be used there.
+   * contains markup such as `*bold*` or a `1.` list line, so mrkdwn cannot be
+   * used there.
    */
   plainText: string;
   /** SlackHtmlFragment.html — Slack-paste-compatible rich text */
@@ -279,6 +280,7 @@ interface TextFormat {
   codeBlock(value: string): string;
   blockquote(inner: string): string;
   rawHtml(value: string): string;
+  orderedMarkerSuffix: string;
 }
 
 const MRKDWN_FORMAT: TextFormat = {
@@ -301,6 +303,7 @@ const MRKDWN_FORMAT: TextFormat = {
   // ordinary text so it renders as literal characters instead of triggering a
   // real mention/notification.
   rawHtml: escapeMrkdwn,
+  orderedMarkerSuffix: ".",
 };
 
 const identity = (value: string): string => value;
@@ -317,6 +320,8 @@ const PLAIN_TEXT_FORMAT: TextFormat = {
   blockquote: identity,
   // Dropped, as in the HTML renderer.
   rawHtml: () => "",
+  // Unlike `1.`, `1)` does not make Slack's composer prefer `text/plain`.
+  orderedMarkerSuffix: ")",
 };
 
 /**
@@ -459,7 +464,13 @@ function blockToText(
 
 function renderListText(list: List, depth: number, format: TextFormat): string {
   const items = list.children.map((item: ListItem, index: number) => {
-    const marker = listItemMarker(list, item, depth, index);
+    const marker = listItemMarker(
+      list,
+      item,
+      depth,
+      index,
+      format.orderedMarkerSuffix
+    );
     const { textParts, nestedLists } = splitListItemChildren(item);
 
     const renderedText = textParts.map((child) => blockToText(child, 0, format));
@@ -483,13 +494,14 @@ function listItemMarker(
   list: List,
   item: ListItem,
   depth: number,
-  index: number
+  index: number,
+  orderedSuffix: string
 ): string {
   if (item.checked === true) return "☑";
   if (item.checked === false) return "☐";
   if (list.ordered) {
     const start = list.start ?? 1;
-    return `${start + index}.`;
+    return `${start + index}${orderedSuffix}`;
   }
   return bulletForDepth(depth);
 }
@@ -590,7 +602,7 @@ function renderBlockquoteHtml(node: Blockquote): string {
  */
 function renderListTextHtml(list: List, depth: number): string {
   const items = list.children.map((item: ListItem, index: number) => {
-    const marker = listItemMarker(list, item, depth, index);
+    const marker = listItemMarker(list, item, depth, index, ".");
     const { textParts, nestedLists } = splitListItemChildren(item);
     const textHtml = renderHtmlBlocks(textParts, 0, true);
     const nestedLines = nestedLists.map((nested) =>

@@ -17,7 +17,8 @@ export type CopyOutcome = "rich" | "plain-fallback";
  * (unsupported ClipboardItem, insecure context, etc.).
  *
  * `plainText` must carry no Slack markup: Slack's composer reads `text/plain`
- * instead of `text/html` when the former contains markup such as `*bold*`.
+ * instead of `text/html` when the former contains markup such as `*bold*`
+ * or a `1.` list line.
  */
 export async function copySlackRichText(
   html: string,

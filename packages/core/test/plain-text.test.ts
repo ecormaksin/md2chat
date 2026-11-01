@@ -3,7 +3,7 @@ import { convert } from "../src/index";
 
 /**
  * Slack's composer reads `text/plain` instead of `text/html` when the former
- * contains markup such as `*bold*`, which turns list markers and links into
+ * contains markup such as `*bold*` or a `1.` list line, which turns list markers and links into
  * literal text. plainText must therefore carry no markup.
  */
 
@@ -14,7 +14,8 @@ describe("plainText carries no Slack markup", () => {
     ["> quoted", "quoted"],
     ["```\ncode\n```", "code"],
     ["- a\n  - b", "• a\n◦ b"],
-    ["1. a\n2. b", "1. a\n2. b"],
+    ["1. a\n2. b", "1) a\n2) b"],
+    ["3. a\n   - b", "3) a\n◦ b"],
     ["- [ ] a", "☐ a"],
     ["a & <b>", "a & "],
   ])("%j", (markdown, expected) => {
@@ -41,6 +42,7 @@ describe("plainText carries no Slack markup", () => {
   });
 
   it("leaves mrkdwn output unchanged", () => {
+    expect(convert("1. a").mrkdwn).toBe("1. a");
     expect(convert("**[label](https://example.com/)**").mrkdwn).toBe(
       "*<https://example.com/|label>*"
     );
